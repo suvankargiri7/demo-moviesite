@@ -21,4 +21,5 @@ Run the test files in the app
 Builds the app for production to the `dist` folder.\
 
 
+### Deployed Varcel App: https://demo-moviesite.vercel.app
 
