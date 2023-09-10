@@ -13,6 +13,8 @@ import HomeIcon from "@mui/icons-material/Home";
 import MovieGridView from "../../components/movie/gridView";
 import MovieDetailView from "../../components/movie/detailView";
 
+import InfiniteScroll from "react-infinite-scroll-component";
+
 type HomeProps = {};
 
 const Home: FunctionComponent<HomeProps> = (props) => {
@@ -37,6 +39,7 @@ const Home: FunctionComponent<HomeProps> = (props) => {
   const [upcomingMovies, setUpcomingMovies] = useState<Array<any>>([]);
   const [selectedMovieId, setSelectedMovieId] = useState<number>(0);
   const [searchMovies, setSearchMovies] = useState<Array<any>>([]);
+  const [initPage, setInitPage] = useState<number>(1);
 
   useEffect(() => {
     const options = {
@@ -49,13 +52,32 @@ const Home: FunctionComponent<HomeProps> = (props) => {
     };
 
     fetch(
-      "https://api.themoviedb.org/3/movie/upcoming?language=en-US&page=1",
+      `https://api.themoviedb.org/3/movie/upcoming?language=en-US&page=${initPage}`,
       options
     )
       .then((response) => response.json())
       .then((response) => setUpcomingMovies(response.results))
       .catch((err) => console.error(err));
   }, []);
+
+  const fetchMoreData = () => {
+    setInitPage(initPage+1);
+    const options = {
+      method: "GET",
+      headers: {
+        accept: "application/json",
+        Authorization:
+          "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJkMzdkYzIxNDNkMzdkMjhlN2UyNjE0ZDhjZjExYjgxMCIsInN1YiI6IjY0ZmFlNWQ3ZmZjOWRlMDBhYzUwOTMxNCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.wyvM0ftKiRAtLD81gliQF-9S7bE6a8srweQDyhEZBIM",
+      },
+    };
+    fetch(
+      `https://api.themoviedb.org/3/movie/upcoming?language=en-US&page=${initPage}`,
+      options
+    )
+      .then((response) => response.json())
+      .then((response) => setUpcomingMovies(upcomingMovies.concat(response.results)))
+      .catch((err) => console.error(err));
+  }
 
   return (
     <Grid container>
@@ -114,14 +136,35 @@ const Home: FunctionComponent<HomeProps> = (props) => {
           </Toolbar>
         </AppBar>
       </Grid>
-      <Grid item xs={12} paddingX={2} marginTop={10} data-testid="maincontainer">
+      <Grid
+        item
+        xs={12}
+        paddingX={2}
+        marginTop={10}
+        data-testid="maincontainer"
+      >
         {!selectedMovieId && (
-          <MovieGridView
-            list_items={searchMovies.length > 0 ? searchMovies : upcomingMovies}
-            onClickOnItem={(id: number) => {
-              setSelectedMovieId(id);
-            }}
-          />
+          <InfiniteScroll
+            dataLength={
+              searchMovies.length > 0
+                ? searchMovies.length
+                : upcomingMovies.length
+            }
+            next={() =>
+              fetchMoreData()
+            }
+            hasMore={true}
+            loader={<h4>Loading...</h4>}
+          >
+            <MovieGridView
+              list_items={
+                searchMovies.length > 0 ? searchMovies : upcomingMovies
+              }
+              onClickOnItem={(id: number) => {
+                setSelectedMovieId(id);
+              }}
+            />
+          </InfiniteScroll>
         )}
         {selectedMovieId && <MovieDetailView movieId={selectedMovieId} />}
       </Grid>
